@@ -16,13 +16,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Log in to GitHub Container Registry (Optional)
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-
       - name: Build Docker Image
         run: |
           docker build --build-arg ARGS="${{ secrets.ARGS }}" -t print-args-env .
 
-      - name: Run Container
+      - name: Run Container and Save Output
         run: |
           docker run --rm print-args-env
+          docker cp $(docker create --rm print-args-env):/app/output.txt output.txt || echo "Failed to copy output"
+
+      - name: Upload Output as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: output-file
+          path: output.txt
