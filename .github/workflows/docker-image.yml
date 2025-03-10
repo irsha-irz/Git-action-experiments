@@ -3,7 +3,7 @@ name: Build and Run Docker Container
 on:
   push:
     branches:
-      - main  # Adjust branch as needed
+      - main
   pull_request:
     branches:
       - main
@@ -20,10 +20,12 @@ jobs:
         run: |
           docker build --build-arg ARGS="${{ secrets.ARGS }}" -t print-args-env .
 
-      - name: Run Container and Save Output
+      - name: Run Container and Copy Output
         run: |
-          docker run --rm --name print-args-container print-args-env
-          docker cp print-args-container:/app/output.txt output.txt || echo "Failed to copy output"
+          CONTAINER_ID=$(docker run -d print-args-env)
+          sleep 2  # Give some time for the container to generate the file
+          docker cp $CONTAINER_ID:/app/output.txt output.txt || echo "Failed to copy output"
+          docker rm -f $CONTAINER_ID  # Cleanup the container
 
       - name: Upload Output as Artifact
         uses: actions/upload-artifact@v4
